@@ -78,7 +78,8 @@ def main():
     print(f"Epochs    : {cfg['training']['epochs']}")
 
     model, train_ds, val_ds, tokenizer = build_components(cfg, data_yaml)
-    model = model.to(device)
+    if not cfg["model"].get("load_in_4bit", False):
+        model = model.to(device)
 
     trainable = [p for p in model.parameters() if p.requires_grad]
     print(f"Trainable params: {sum(p.numel() for p in trainable):,}")

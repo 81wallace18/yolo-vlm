@@ -52,9 +52,10 @@ class SmallVLM(nn.Module):
             vision_mask = torch.ones(B, 1, device=attention_mask.device, dtype=attention_mask.dtype)
             attention_mask = torch.cat([vision_mask, attention_mask], dim=1)
 
-        # Shift labels: ignore the vision prefix position
+        # Shift labels: ignore padding and the vision prefix position
         labels = input_ids.clone()
-        labels[labels == 0] = -100  # ignore padding tokens
+        if attention_mask is not None:
+            labels[attention_mask == 0] = -100
 
         # Prepend -100 for the vision token position so loss ignores it
         B = input_ids.size(0)
@@ -83,6 +84,9 @@ class SmallVLM(nn.Module):
                 attention_mask = torch.cat([vision_mask, attention_mask], dim=1)
         else:
             inputs_embeds = vision_token
+            B = vision_token.shape[0]
+            if attention_mask is None:
+                attention_mask = torch.ones(B, inputs_embeds.shape[1], device=inputs_embeds.device, dtype=torch.long)
 
         return self.decoder.generate(
             inputs_embeds=inputs_embeds,

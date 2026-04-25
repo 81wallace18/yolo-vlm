@@ -56,12 +56,6 @@ class Phi3Dataset(Dataset):
 
         full_text = _PROMPT + caption + _SUFFIX
 
-        # Tokenize prompt alone to know where to start computing loss
-        prompt_enc = self.processor.tokenizer(
-            _PROMPT, return_tensors="pt", add_special_tokens=False
-        )
-        prompt_len = prompt_enc["input_ids"].shape[1]
-
         # Tokenize full text + process image
         enc = self.processor(
             text=full_text,
@@ -77,9 +71,14 @@ class Phi3Dataset(Dataset):
         pixel_values = enc["pixel_values"].squeeze(0)
         image_sizes = enc.get("image_sizes", torch.tensor([[image.height, image.width]])).squeeze(0)
 
-        # Mask prompt tokens in labels so loss only covers the caption
+        # Mask everything before (and including) <|assistant|>\n so loss covers only the caption.
+        # We search in the actual input_ids (which include image tokens) rather than tokenizing
+        # the prompt text separately — avoids the off-by-N error from image token insertion.
         labels = input_ids.clone()
-        labels[:prompt_len] = -100
+        assistant_id = self.processor.tokenizer.convert_tokens_to_ids("<|assistant|>")
+        positions = (input_ids == assistant_id).nonzero(as_tuple=True)[0]
+        response_start = int(positions[-1]) + 2 if len(positions) > 0 else 0
+        labels[:response_start] = -100
         labels[labels == self.processor.tokenizer.pad_token_id] = -100
 
         return {
