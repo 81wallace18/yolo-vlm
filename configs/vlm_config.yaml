@@ -1,0 +1,25 @@
+model:
+  type: custom
+  vision_encoder: "openai/clip-vit-base-patch32"
+  vision_dim: 768
+  projection_hidden_dim: 768
+  language_model: "HuggingFaceTB/SmolLM-135M"
+  language_dim: 576   # SmolLM-135M hidden size
+  lora_rank: 8
+  lora_alpha: 16
+  lora_dropout: 0.05
+  max_new_tokens: 64
+
+dataset:
+  name: coco8
+  download: "https://github.com/ultralytics/assets/releases/download/v0.0.0/coco8.zip"
+
+training:
+  epochs: 10
+  batch_size: 8
+  lr: 1e-4
+  weight_decay: 0.01
+  warmup_steps: 50
+  device: "cuda"
+  save_path: "checkpoints/"
+  log_every: 10
