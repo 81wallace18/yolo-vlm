@@ -1,0 +1,7 @@
+torch>=2.0
+transformers>=4.40
+peft>=0.10
+Pillow>=9.0
+PyYAML>=6.0
+tqdm>=4.65
+bitsandbytes>=0.41  # optional: required for load_in_4bit=true (phi3 config)

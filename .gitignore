@@ -1,0 +1,8 @@
+__pycache__/
+*.py[cod]
+.venv/
+checkpoints/
+.playwright-cli/
+*.pt
+*.zip
+.cache/
