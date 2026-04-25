@@ -46,18 +46,19 @@ class SmallVLM(nn.Module):
     def forward(self, pixel_values, input_ids, attention_mask=None):
         inputs_embeds = self._build_inputs_embeds(pixel_values, input_ids)
 
-        # Extend attention mask to cover the prepended vision token
+        # Mask padding in labels using the original attention_mask (B, T) — must happen
+        # before extending it, so shapes match for boolean indexing.
+        labels = input_ids.clone()
+        if attention_mask is not None:
+            labels[attention_mask == 0] = -100
+
+        # Extend attention mask to cover the prepended vision token → (B, 1+T)
         if attention_mask is not None:
             B = input_ids.size(0)
             vision_mask = torch.ones(B, 1, device=attention_mask.device, dtype=attention_mask.dtype)
             attention_mask = torch.cat([vision_mask, attention_mask], dim=1)
 
-        # Shift labels: ignore padding and the vision prefix position
-        labels = input_ids.clone()
-        if attention_mask is not None:
-            labels[attention_mask == 0] = -100
-
-        # Prepend -100 for the vision token position so loss ignores it
+        # Prepend -100 for the vision token position so loss ignores it → (B, 1+T)
         B = input_ids.size(0)
         vision_label = torch.full((B, 1), -100, device=labels.device, dtype=labels.dtype)
         labels = torch.cat([vision_label, labels], dim=1)
