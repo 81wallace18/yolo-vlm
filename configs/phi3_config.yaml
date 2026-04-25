@@ -1,0 +1,22 @@
+model:
+  type: phi3
+  language_model: "microsoft/Phi-3-vision-128k-instruct"
+  lora_rank: 8
+  lora_alpha: 16
+  lora_dropout: 0.05
+  load_in_4bit: true   # set false if you have >=8GB VRAM free
+  max_new_tokens: 64
+
+dataset:
+  name: coco8
+  download: "https://github.com/ultralytics/assets/releases/download/v0.0.0/coco8.zip"
+
+training:
+  epochs: 5
+  batch_size: 2        # small — 4.2B model
+  lr: 5e-5
+  weight_decay: 0.01
+  warmup_steps: 20
+  device: "cuda"
+  save_path: "checkpoints/"
+  log_every: 5
