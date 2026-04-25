@@ -9,10 +9,11 @@ from tqdm import tqdm
 from transformers import AutoProcessor, AutoTokenizer, get_cosine_schedule_with_warmup
 
 from data.download import ensure_dataset
+from evaluation import evaluate_captions, format_metrics
 
 
 def build_components(cfg: dict, data_yaml):
-    """Factory — returns (model, train_ds, val_ds, tokenizer) for any model.type."""
+    """Factory — returns (model, train_ds, val_ds, processor, tokenizer) for any model.type."""
     model_type = cfg["model"].get("type", "custom")
 
     if model_type == "phi3":
@@ -40,7 +41,7 @@ def build_components(cfg: dict, data_yaml):
         train_ds = YOLOVLMDataset(data_yaml, split="train", processor=processor, tokenizer=tokenizer)
         val_ds = YOLOVLMDataset(data_yaml, split="val", processor=processor, tokenizer=tokenizer)
 
-    return model, train_ds, val_ds, tokenizer
+    return model, train_ds, val_ds, processor, tokenizer
 
 
 def parse_args():
@@ -77,7 +78,7 @@ def main():
     print(f"Dataset   : {data_yaml}")
     print(f"Epochs    : {cfg['training']['epochs']}")
 
-    model, train_ds, val_ds, tokenizer = build_components(cfg, data_yaml)
+    model, train_ds, val_ds, processor, tokenizer = build_components(cfg, data_yaml)
     if not cfg["model"].get("load_in_4bit", False):
         model = model.to(device)
 
@@ -126,6 +127,9 @@ def main():
         val_loss /= max(len(val_loader), 1)
 
         print(f"Epoch {epoch}: train_loss={avg_loss:.4f}  val_loss={val_loss:.4f}")
+
+        metrics = evaluate_captions(model, val_ds, processor, tokenizer, device, model_type)
+        print(format_metrics(metrics))
 
         ckpt = save_path / f"vlm_epoch{epoch:02d}.pt"
         torch.save({"epoch": epoch, "model_state": model.state_dict(), "cfg": cfg}, ckpt)

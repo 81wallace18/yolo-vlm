@@ -24,6 +24,7 @@ YOLO/
 │   └── phi3_vlm.py           # phi3: Phi-3-vision + LoRA + 4-bit opcional
 ├── train.py                  # loop de treino genérico (custom + phi3)
 ├── inference.py              # geração de captions
+├── evaluation.py             # caption-level F1 + position accuracy (proxy de mAP)
 └── requirements.txt
 ```
 
@@ -294,6 +295,82 @@ Geração de caption pra uma imagem isolada.
 6. Print da caption.
 
 A grande sacada é que **o usuário não precisa saber qual backend foi treinado** — o checkpoint salva o `cfg` e o `inference.py` se adapta sozinho.
+
+---
+
+## `evaluation.py` + `data/caption_parser.py`
+
+Métrica de avaliação que substitui o **mAP** literal (que não se aplica a um VLM gerador de texto — não há bbox, IoU ou confidence ranking).
+
+### `data/caption_parser.py`
+
+**`parse_caption(caption, valid_classes) -> list[(class, position)]`**
+
+Recebe texto livre tipo `"A person at center. A car at bottom-left."` e retorna `[("person", "center"), ("car", "bottom-left")]`.
+
+Funcionamento:
+1. Split em `"."` → lista de frases.
+2. Cada frase é matched contra a regex `^[Aa]n?\s+(.+?)\s+at\s+([a-z\-]+)\s*$`.
+3. Class names são validadas contra `valid_classes` (set do dataset).
+4. Posições são validadas contra as 9 células do grid (`top-left`, `center`, etc.).
+5. Frases que não casam são descartadas silenciosamente — viram falsos negativos na métrica.
+
+Robusto a: artigos `A`/`An`, classes multi-palavra (`"fire hydrant"`), pontuação opcional, texto totalmente fora do template.
+
+### `evaluation.py`
+
+**`evaluate_captions(model, val_ds, processor, tokenizer, device, model_type) -> dict`**
+
+Loop principal:
+1. Pra cada `(img_path, label_path)` em `val_ds.samples`:
+   - Gera caption: chama `_generate_caption_phi3()` ou `_generate_caption_custom()` dependendo do backend.
+   - Caption ground truth via `yolo_labels_to_caption()` (mesma função usada no treino).
+   - Parse de ambos com `parse_caption()` → listas de `(class, position)`.
+2. Agrega via `_aggregate()`.
+
+**`_aggregate(predictions, ground_truths) -> dict`**
+
+Por imagem:
+- `pred_classes` = set de classes preditas, `gt_classes` = set de classes ground truth.
+- TP = `pred_classes ∩ gt_classes`, FP = `pred_classes \ gt_classes`, FN = `gt_classes \ pred_classes` — tudo a nível de classe (não instância, porque sem bbox não dá pra contar instâncias).
+- Position accuracy: pra cada classe correta, conta como hit se *qualquer* posição predita pra ela bate com *qualquer* posição ground truth.
+
+Por classe (apenas as que aparecem em algum ground truth):
+- `precision = TP / (TP+FP)`, `recall = TP / (TP+FN)`, `f1 = 2PR/(P+R)`.
+
+Agregados macro:
+- `macro_f1` = média de F1 sobre as classes — **este é o proxy honesto de mAP**.
+- `macro_precision`, `macro_recall` — médias de P e R.
+- `position_accuracy` = `pos_correct / pos_total`.
+
+**`format_metrics(metrics) -> str`**
+
+Formata o dict em string multi-linha com a linha agregada + breakdown per-class ordenado alfabeticamente.
+
+### Integração no `train.py`
+
+Após o loop de validação (cálculo de `val_loss`), o `train.py` chama:
+
+```
+metrics = evaluate_captions(model, val_ds, processor, tokenizer, device, model_type)
+print(format_metrics(metrics))
+```
+
+Imprime algo como:
+
+```
+Epoch 5: train_loss=1.234  val_loss=2.345
+  macro_precision=0.612  macro_recall=0.534  macro_f1=0.567  position_acc=0.412
+  per-class:
+    car                   P=0.50  R=1.00  F1=0.67  (n=1)
+    person                P=1.00  R=0.50  F1=0.67  (n=2)
+```
+
+### Por que isto NÃO é mAP literal
+
+mAP exige confidence-ranked predictions pra desenhar a curva PR e calcular AUC. Greedy decoding (`do_sample=False`) produz **uma única decisão determinística** — sem ranking, sem curva. Também não há IoU porque não temos coordenadas.
+
+O que reportamos é equivalente a **accuracy de classificação multi-rótulo**, decomposto em precision/recall/F1 por classe. É honesto, é útil, e responde a pergunta "o modelo está aprendendo a descrever o que vê?" — só que não chama de mAP porque não é.
 
 ---
 
