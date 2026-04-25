@@ -314,3 +314,51 @@ Phi-3 faz a mesma coisa, mas com tudo pré-alinhado de fábrica e em escala 30×
 - **Greedy decoding** pode ficar repetitivo. Beam search ou nucleus sampling melhoraria fluência.
 
 São limitações do escopo do projeto, não bugs. O propósito é **didático**: entender a anatomia de um VLM end-to-end, não competir com GPT-4V.
+
+---
+
+## Referências
+
+### Vision-Language e Contrastive Learning
+
+- **CLIP** — Radford et al. (2021). *Learning Transferable Visual Models From Natural Language Supervision*. arXiv:[2103.00020](https://arxiv.org/abs/2103.00020)
+- **InfoNCE** — van den Oord et al. (2018). *Representation Learning with Contrastive Predictive Coding*. arXiv:[1807.03748](https://arxiv.org/abs/1807.03748)
+- **ViT (Vision Transformer)** — Dosovitskiy et al. (2021). *An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale*. arXiv:[2010.11929](https://arxiv.org/abs/2010.11929)
+- **Phi-3-vision** — Abdin et al. (2024). *Phi-3 Technical Report: A Highly Capable Language Model Locally on Your Phone*. arXiv:[2404.14219](https://arxiv.org/abs/2404.14219)
+- **LLaVA** (referência conceitual de VLMs com vision token) — Liu et al. (2023). *Visual Instruction Tuning*. arXiv:[2304.08485](https://arxiv.org/abs/2304.08485)
+
+### Language Modeling
+
+- **Transformer** — Vaswani et al. (2017). *Attention Is All You Need*. arXiv:[1706.03762](https://arxiv.org/abs/1706.03762)
+- **GPT-2 / decoder-only causal LM** — Radford et al. (2019). *Language Models are Unsupervised Multitask Learners*. [OpenAI tech report](https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf)
+- **Llama (arquitetura usada por SmolLM)** — Touvron et al. (2023). *LLaMA: Open and Efficient Foundation Language Models*. arXiv:[2302.13971](https://arxiv.org/abs/2302.13971)
+- **SmolLM** — HuggingFace blog (2024). *SmolLM - blazingly fast and remarkably powerful*. https://huggingface.co/blog/smollm
+
+### Fine-Tuning Eficiente
+
+- **LoRA** — Hu et al. (2021). *LoRA: Low-Rank Adaptation of Large Language Models*. arXiv:[2106.09685](https://arxiv.org/abs/2106.09685)
+- **QLoRA / NF4 quantization** — Dettmers et al. (2023). *QLoRA: Efficient Finetuning of Quantized LLMs*. arXiv:[2305.14314](https://arxiv.org/abs/2305.14314)
+- **bitsandbytes (8-bit base)** — Dettmers et al. (2022). *LLM.int8(): 8-bit Matrix Multiplication for Transformers at Scale*. arXiv:[2208.07339](https://arxiv.org/abs/2208.07339)
+
+### Otimização
+
+- **Adam** — Kingma & Ba (2015). *Adam: A Method for Stochastic Optimization*. arXiv:[1412.6980](https://arxiv.org/abs/1412.6980)
+- **AdamW** — Loshchilov & Hutter (2019). *Decoupled Weight Decay Regularization*. arXiv:[1711.05101](https://arxiv.org/abs/1711.05101)
+- **Cosine annealing / SGDR** — Loshchilov & Hutter (2017). *SGDR: Stochastic Gradient Descent with Warm Restarts*. arXiv:[1608.03983](https://arxiv.org/abs/1608.03983)
+- **Linear warmup** — Goyal et al. (2017). *Accurate, Large Minibatch SGD: Training ImageNet in 1 Hour*. arXiv:[1706.02677](https://arxiv.org/abs/1706.02677)
+
+### Ativações e Fundamentos
+
+- **GELU** — Hendrycks & Gimpel (2016). *Gaussian Error Linear Units (GELUs)*. arXiv:[1606.08415](https://arxiv.org/abs/1606.08415)
+- **Universal Approximation Theorem** — Hornik (1991). *Approximation Capabilities of Multilayer Feedforward Networks*. *Neural Networks*, 4(2):251–257.
+- **Cross-entropy & Maximum Likelihood** — base estatística clássica; tratamento moderno em Goodfellow et al. (2016). *Deep Learning*. MIT Press, [www.deeplearningbook.org](https://www.deeplearningbook.org)
+
+### Datasets
+
+- **COCO** — Lin et al. (2014). *Microsoft COCO: Common Objects in Context*. arXiv:[1405.0312](https://arxiv.org/abs/1405.0312)
+- **YOLO format** — Redmon et al. (2016). *You Only Look Once: Unified, Real-Time Object Detection*. arXiv:[1506.02640](https://arxiv.org/abs/1506.02640). Formato canônico mantido em [Ultralytics docs](https://docs.ultralytics.com/datasets/detect/).
+
+### Ferramentas
+
+- **PEFT (HuggingFace)** — Mangrulkar et al. (2022). *PEFT: State-of-the-art Parameter-Efficient Fine-Tuning methods*. https://github.com/huggingface/peft
+- **Transformers (HuggingFace)** — Wolf et al. (2020). *Transformers: State-of-the-Art Natural Language Processing*. https://github.com/huggingface/transformers
